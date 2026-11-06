@@ -30,6 +30,7 @@ input[type=search]{flex:1;min-width:200px;max-width:380px;padding:10px 12px;bord
 .name{font-weight:600}
 .st{font-size:.88rem;color:var(--mute)}
 .st.ok{color:var(--ok);font-weight:600}
+.tgl{font-size:.9rem;color:var(--mute)}
 .none{padding:40px 0;color:var(--mute)}
 dialog{width:min(980px,96vw);padding:0;border:0;border-radius:8px;background:var(--panel);color:var(--ink)}
 dialog::backdrop{background:rgba(10,18,26,.7)}
@@ -59,7 +60,7 @@ button.b:hover,a.b:hover{border-color:var(--navy)}
 </main>
 
 <dialog id="dlg" aria-labelledby="dt">
-  <div class="bar"><strong id="dt"></strong><button class="b" id="x">Tutup</button></div>
+  <div class="bar"><div><strong id="dt"></strong><div class="tgl" id="dd"></div></div><button class="b" id="x">Tutup</button></div>
   <div class="vid"><iframe id="fr" title="Video cleaning" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
   <div class="nav">
     <button class="b" id="prev">Sebelumnya</button>
@@ -71,30 +72,32 @@ button.b:hover,a.b:hover{border-color:var(--navy)}
 <script>
 /* ============================================================
    DAFTAR EQUIPMENT  (ubah di sini saja)
-   Format:  ["Nama equipment", "link Google Drive"],
-   - Tempel link share Drive apa adanya, contoh:
+   Format:  ["Nama equipment", "link Google Drive", "tanggal pengerjaan"],
+   - Link: tempel link share Drive apa adanya, contoh:
      https://drive.google.com/file/d/XXXXXXXXXXXX/view?usp=sharing
    - File Drive harus: Share > "Anyone with the link" > Viewer
    - Link dikosongkan "" = kartu tampil abu-abu "Belum ada video"
+   - Tanggal: tulis 2026-11-05 atau 05/11/2026, tampil sebagai "5 November 2026".
+     Boleh teks bebas, misalnya "1-3 November 2026". Kosongkan "" jika belum ada.
    ============================================================ */
 const EQUIPMENT = [
-  ["CTCS System", "https://drive.google.com/file/d/1Vnb8NsGc-vRPLgy90CEt_rB4leNDzLnB/view?usp=sharing"],
-  ["Vacuum Pump & Tank", "https://drive.google.com/file/d/182WxqbJqeGOL_IzpwALapiVXdqmbqUUP/view?usp=sharing"],
-  ["Control Oil Pump & CORF", "https://drive.google.com/file/d/1b5sNZxXEOspAXvyuE5kBS84F8mnW35SV/view?usp=sharing"],
-  ["Lube Oil Tank", "https://drive.google.com/file/d/175xtaQTcYRlgci5TD68VnnmxU5RPwENf/view?usp=sharing"],
-  ["Equipment 5", ""],
-  ["Equipment 6", ""],
-  ["Equipment 7", ""],
-  ["Equipment 8", ""],
-  ["Equipment 9", ""],
-  ["Equipment 10", ""],
-  ["Equipment 11", ""],
-  ["Equipment 12", ""],
-  ["Equipment 13", ""],
-  ["Equipment 14", ""],
-  ["Equipment 15", ""],
-  ["Equipment 16", ""],
-  ["Equipment 17", ""]
+  ["CTCS System", "https://drive.google.com/file/d/1Vnb8NsGc-vRPLgy90CEt_rB4leNDzLnB/view?usp=sharing", "05/11/2026"],
+  ["Vacuum Pump & Tank", "https://drive.google.com/file/d/182WxqbJqeGOL_IzpwALapiVXdqmbqUUP/view?usp=sharing", "05/11/2026"],
+  ["Control Oil Pump & CORF", "https://drive.google.com/file/d/1b5sNZxXEOspAXvyuE5kBS84F8mnW35SV/view?usp=sharing", "05/11/2026"],
+  ["Lube Oil Tank", "https://drive.google.com/file/d/175xtaQTcYRlgci5TD68VnnmxU5RPwENf/view?usp=sharing", "05/11/2026"],
+  ["Equipment 5", "", ""],
+  ["Equipment 6", "", ""],
+  ["Equipment 7", "", ""],
+  ["Equipment 8", "", ""],
+  ["Equipment 9", "", ""],
+  ["Equipment 10", "", ""],
+  ["Equipment 11", "", ""],
+  ["Equipment 12", "", ""],
+  ["Equipment 13", "", ""],
+  ["Equipment 14", "", ""],
+  ["Equipment 15", "", ""],
+  ["Equipment 16", "", ""],
+  ["Equipment 17", "", ""]
 ];
 
 function driveId(s){
@@ -104,7 +107,15 @@ function driveId(s){
   if(m) return m[1];
   return /^[\w-]{10,}$/.test(s) ? s : "";
 }
-const E = EQUIPMENT.map(([nama, link]) => ({nama, id: driveId(link)}));
+function fmtDate(s){
+  s = (s || "").trim();
+  if(!s) return "";
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/), d;
+  if(m) d = new Date(+m[1], m[2] - 1, +m[3]);
+  else if((m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/))) d = new Date(+m[3], m[2] - 1, +m[1]);
+  return d && !isNaN(d) ? d.toLocaleDateString("id-ID", {day: "numeric", month: "long", year: "numeric"}) : s;
+}
+const E = EQUIPMENT.map(([nama, link, tgl]) => ({nama, id: driveId(link), tgl: fmtDate(tgl)}));
 
 const $ = id => document.getElementById(id);
 const grid = $("grid"), dlg = $("dlg"), fr = $("fr");
@@ -126,6 +137,7 @@ function render(){
       return `<button class="card" ${has ? `data-id="${e.id}"` : "disabled"}>
         <div class="thumb">${img}<span class="play"></span></div>
         <div class="body"><div class="name">${esc(e.nama)}</div>
+        ${e.tgl ? `<div class="tgl">${esc(e.tgl)}</div>` : ""}
         <div class="st ${has ? "ok" : ""}">${has ? "Putar video" : "Belum ada video"}</div></div></button>`;
     }).join("");
   }
@@ -137,6 +149,7 @@ function openAt(i){
   pos = (i + shown.length) % shown.length;
   const e = shown[pos];
   $("dt").textContent = e.nama;
+  $("dd").textContent = e.tgl;
   fr.src = `https://drive.google.com/file/d/${e.id}/preview`;
   $("gd").href = `https://drive.google.com/file/d/${e.id}/view`;
   $("prev").disabled = $("next").disabled = shown.length < 2;
