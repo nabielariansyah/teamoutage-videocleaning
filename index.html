@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Cleaning Equipment</title>
+<style>
+:root{--bg:#f2f4f6;--panel:#fff;--ink:#16222e;--mute:#5d6b78;--line:#d9dfe5;--navy:#1f3864;--ok:#2e7d6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",Roboto,system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header{background:var(--navy);color:#fff;padding:22px 0 18px}
+h1{margin:0;font-size:1.6rem;font-weight:700;letter-spacing:-.01em}
+.sub{margin:4px 0 0;color:#c9d4e8;font-size:.95rem}
+.tools{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:16px}
+input[type=search]{flex:1;min-width:200px;max-width:380px;padding:10px 12px;border:2px solid transparent;border-radius:6px;font:inherit}
+.chk{display:flex;gap:8px;align-items:center;font-size:.95rem;cursor:pointer}
+.chk input{width:18px;height:18px}
+:focus-visible{outline:3px solid #f5b942;outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;padding:22px 0 48px}
+.card{display:flex;flex-direction:column;padding:0;text-align:left;font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer}
+.card:hover:not(:disabled){border-color:var(--navy)}
+.card:disabled{cursor:default;background:#eceff2}
+.thumb{position:relative;aspect-ratio:16/9;background:#dfe5ea}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.play{position:absolute;inset:0;margin:auto;width:48px;height:48px;border-radius:50%;background:rgba(22,34,46,.78)}
+.play::after{content:"";position:absolute;left:19px;top:14px;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent}
+.card:disabled .play{display:none}
+.body{padding:12px 14px}
+.name{font-weight:600}
+.st{font-size:.88rem;color:var(--mute)}
+.st.ok{color:var(--ok);font-weight:600}
+.none{padding:40px 0;color:var(--mute)}
+dialog{width:min(980px,96vw);padding:0;border:0;border-radius:8px;background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(10,18,26,.7)}
+.bar,.nav{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}
+.bar strong{font-size:1.1rem}
+.vid{aspect-ratio:16/9;background:#000}
+.vid iframe{width:100%;height:100%;border:0;display:block}
+button.b,a.b{padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:inherit;cursor:pointer;text-decoration:none}
+button.b:hover,a.b:hover{border-color:var(--navy)}
+.nav{flex-wrap:wrap}
+@media (max-width:600px){dialog{width:100vw;max-height:100vh;border-radius:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Video Cleaning Equipment</h1>
+    <p class="sub" id="sum"></p>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Cari equipment" aria-label="Cari equipment">
+      <label class="chk"><input type="checkbox" id="onlyv"> Hanya yang sudah ada video</label>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+</main>
+
+<dialog id="dlg" aria-labelledby="dt">
+  <div class="bar"><strong id="dt"></strong><button class="b" id="x">Tutup</button></div>
+  <div class="vid"><iframe id="fr" title="Video cleaning" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+  <div class="nav">
+    <button class="b" id="prev">Sebelumnya</button>
+    <a class="b" id="gd" target="_blank" rel="noopener">Buka di Google Drive</a>
+    <button class="b" id="next">Berikutnya</button>
+  </div>
+</dialog>
+
+<script>
+/* ============================================================
+   DAFTAR EQUIPMENT  (ubah di sini saja)
+   Format:  ["Nama equipment", "link Google Drive"],
+   - Tempel link share Drive apa adanya, contoh:
+     https://drive.google.com/file/d/XXXXXXXXXXXX/view?usp=sharing
+   - File Drive harus: Share > "Anyone with the link" > Viewer
+   - Link dikosongkan "" = kartu tampil abu-abu "Belum ada video"
+   ============================================================ */
+const EQUIPMENT = [
+  ["CTCS System", "https://drive.google.com/file/d/1Vnb8NsGc-vRPLgy90CEt_rB4leNDzLnB/view?usp=sharing"],
+  ["Vacuum Pump & Tank", "https://drive.google.com/file/d/182WxqbJqeGOL_IzpwALapiVXdqmbqUUP/view?usp=sharing"],
+  ["Control Oil Pump & CORF", "https://drive.google.com/file/d/1b5sNZxXEOspAXvyuE5kBS84F8mnW35SV/view?usp=sharing"],
+  ["Lube Oil Tank", "https://drive.google.com/file/d/175xtaQTcYRlgci5TD68VnnmxU5RPwENf/view?usp=sharing"],
+  ["Equipment 5", ""],
+  ["Equipment 6", ""],
+  ["Equipment 7", ""],
+  ["Equipment 8", ""],
+  ["Equipment 9", ""],
+  ["Equipment 10", ""],
+  ["Equipment 11", ""],
+  ["Equipment 12", ""],
+  ["Equipment 13", ""],
+  ["Equipment 14", ""],
+  ["Equipment 15", ""],
+  ["Equipment 16", ""],
+  ["Equipment 17", ""]
+];
+
+function driveId(s){
+  s = (s || "").trim();
+  if(!s) return "";
+  const m = s.match(/\/d\/([\w-]{10,})/) || s.match(/[?&]id=([\w-]{10,})/);
+  if(m) return m[1];
+  return /^[\w-]{10,}$/.test(s) ? s : "";
+}
+const E = EQUIPMENT.map(([nama, link]) => ({nama, id: driveId(link)}));
+
+const $ = id => document.getElementById(id);
+const grid = $("grid"), dlg = $("dlg"), fr = $("fr");
+let shown = [], pos = 0;
+
+function esc(t){ return t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function render(){
+  const q = $("q").value.trim().toLowerCase();
+  const only = $("onlyv").checked;
+  const list = E.filter(e => e.nama.toLowerCase().includes(q) && (!only || e.id));
+  shown = list.filter(e => e.id);
+  if(!list.length){
+    grid.innerHTML = '<p class="none">Tidak ada equipment yang cocok. Ubah kata kunci atau matikan filter.</p>';
+  } else {
+    grid.innerHTML = list.map(e => {
+      const has = !!e.id;
+      const img = has ? `<img src="https://drive.google.com/thumbnail?id=${e.id}&sz=w640" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : "";
+      return `<button class="card" ${has ? `data-id="${e.id}"` : "disabled"}>
+        <div class="thumb">${img}<span class="play"></span></div>
+        <div class="body"><div class="name">${esc(e.nama)}</div>
+        <div class="st ${has ? "ok" : ""}">${has ? "Putar video" : "Belum ada video"}</div></div></button>`;
+    }).join("");
+  }
+  const n = E.filter(e => e.id).length;
+  $("sum").textContent = `${E.length} equipment, ${n} sudah ada video`;
+}
+
+function openAt(i){
+  pos = (i + shown.length) % shown.length;
+  const e = shown[pos];
+  $("dt").textContent = e.nama;
+  fr.src = `https://drive.google.com/file/d/${e.id}/preview`;
+  $("gd").href = `https://drive.google.com/file/d/${e.id}/view`;
+  $("prev").disabled = $("next").disabled = shown.length < 2;
+  if(!dlg.open) dlg.showModal();
+}
+
+grid.addEventListener("click", ev => {
+  const c = ev.target.closest(".card[data-id]");
+  if(c) openAt(shown.findIndex(e => e.id === c.dataset.id));
+});
+$("prev").onclick = () => openAt(pos - 1);
+$("next").onclick = () => openAt(pos + 1);
+$("x").onclick = () => dlg.close();
+dlg.addEventListener("close", () => { fr.src = "about:blank"; });
+dlg.addEventListener("click", ev => { if(ev.target === dlg) dlg.close(); });
+$("q").addEventListener("input", render);
+$("onlyv").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>
